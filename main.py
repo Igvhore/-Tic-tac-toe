@@ -1,145 +1,150 @@
-# Заданное количество партий
-
-# количество партий
-N = 10 ** 5
-
+import numpy as np
 import random
+class RandomAgent:
+    def choose_action(self, state, possible_actions):
+        return random.choice(possible_actions)
+class QLearningAgent:
+    def __init__(self, epsilon=0.1, alpha=0.2, gamma=0.9):
+        self.epsilon = epsilon  # параметр исследования
+        self.alpha = alpha      # скорость обучения
+        self.gamma = gamma      # дисконт-фактор
+        self.q_values = {}      # Q-значения
 
-print('started...')
+    def get_q_value(self, state, action):
+        return self.q_values.get((state, action), 0.0)
 
-available_list = list(range(1, 10))  # список доступных ходов
-win_list = ['123', '456', '789', '147', '258', '369', '159', '357']  # список выигрышных комбинаций
-
-tableX = []  # таблица комбинаций X
-tableO = []  # таблица комбинаций O
-previous_tableX_length = len(tableX)
-previous_tableO_length = len(tableO)
-# tableX_procents = []
-tableX_quantity = []
-
-for k in range(N):
-    # print('Party', (k+1))
-
-    available_list = list(range(1, 10))
-    current_status = 'start'  # текущий статус партии
-    current_side = 'X'  # текущая сторона
-    combination_code = 'C---------'  # код комбинации
-    combination_code_history = []  # история комбинаций
-
-    # цикл делания ходов
-    while len(available_list):
-        side_step = random.choice(available_list)
-        # print(side_step)
-        combination_code = combination_code[:side_step] + current_side + combination_code[side_step + 1:]
-        # print(combination_code)
-        combination_code_history.append(combination_code)
-
-        for key in win_list:
-            if combination_code[int(key[0])] == current_side and combination_code[int(key[1])] == current_side and \
-                    combination_code[int(key[2])] == current_side:
-                current_status = 'win' + current_side
-                # print(key)
-                break
-        if current_status == 'winX' or current_status == 'winO': break
-
-        available_list.remove(side_step)
-        # print(available_list)
-        current_side = 'O' if current_side == 'X' else 'X'
-
-    if current_status != 'winX' and current_status != 'winO':
-        current_status = 'draw'
-
-    # фиксация в базу
-
-    # для каждой комбинации в истории
-    for index, value in enumerate(combination_code_history):
-
-        #    print()
-
-        # ищем комбинацию в крестиках
-        if index % 2 == 0:
-            # print(index,value)
-            # перебираем таблицу tableX
-            find_status = False
-            # print('tableX',tableX, len(tableX))
-            # print('value',value)
-            for index2, value2 in enumerate(tableX):
-                # print(value,value2[0])
-                # если находим
-                if value == value2[0]:
-                    find_status = True
-                    # print('нашли X', value)
-                    previous_tableX_length = previous_tableX_length - 1
-                    # print(index,value,tableX[int(index2)][1],tableX[int(index2)][2],tableX[int(index2)][3])
-                    if current_status == 'winX': tableX[int(index2)][1] = tableX[int(index2)][1] + 1
-                    if current_status == 'winO': tableX[int(index2)][2] = tableX[int(index2)][2] + 1
-                    if current_status == 'draw': tableX[int(index2)][3] = tableX[int(index2)][3] + 1
-                    # print(index,value,tableX[int(index2)][1],tableX[int(index2)][2],tableX[int(index2)][3])
-                    # print(tableX)
-                    break
-
-            # если всю историю прошли и не нашли, то добавляем
-            if not find_status:
-                tableX.append([value, 0, 0, 0])
-                # print('не нашли X')
-                # print(index,value,current_status,tableX[int(index/2+previous_tableX_length)][1],tableX[int(index/2)+previous_tableX_length][2],tableX[int(index/2)+previous_tableX_length][3])
-                if current_status == 'winX': tableX[int(index / 2) + previous_tableX_length][1] = \
-                tableX[int(index / 2) + previous_tableX_length][1] + 1
-                if current_status == 'winO': tableX[int(index / 2) + previous_tableX_length][2] = \
-                tableX[int(index / 2) + previous_tableX_length][2] + 1
-                if current_status == 'draw': tableX[int(index / 2 + previous_tableX_length)][3] = \
-                tableX[int(index / 2) + previous_tableX_length][3] + 1
-                # print(index,value,current_status,tableX[int(index/2)+previous_tableX_length][1],tableX[int(index/2)+previous_tableX_length][2],tableX[int(index/2)+previous_tableX_length][3])
-
-        # то же самое в ноликах
+    def choose_action(self, state, possible_actions):
+        if random.uniform(0, 1) < self.epsilon:
+            return random.choice(possible_actions)  # случайное действие с вероятностью epsilon
         else:
-            # print(index,value)
-            # перебираем таблицу tableO
-            find_status = False
-            for index2, value2 in enumerate(tableO):
-                # print(value,value2[0])
-                # если находим
-                if value == value2[0]:
-                    find_status = True
-                    # print('нашли O', value)
-                    previous_tableO_length = previous_tableO_length - 1
-                    # print(index,value,tableO[int(index2)][1],tableO[int(index2)][2],tableO[int(index2)][3])
-                    if current_status == 'winO': tableO[int(index2)][1] = tableO[int(index2)][1] + 1
-                    if current_status == 'winX': tableO[int(index2)][2] = tableO[int(index2)][2] + 1
-                    if current_status == 'draw': tableO[int(index2)][3] = tableO[int(index2)][3] + 1
-                    # print(index,value,tableO[int(index2)][1],tableO[int(index2)][2],tableO[int(index2)][3])
-                    # print(tableO)
-                    break
-            # если всю историю прошли и не нашли, то добавляем
-            if not find_status:
-                tableO.append([value, 0, 0, 0])
-                # print('не нашли O')
-                # print(index,value,current_status,tableO[int(index/2+previous_tableO_length)][1],tableO[int(index/2+previous_tableO_length)][2],tableO[int(index/2)+previous_tableO_length][3])
-                if current_status == 'winO': tableO[int(index / 2) + previous_tableO_length][1] = \
-                tableO[int(index / 2) + previous_tableO_length][1] + 1
-                if current_status == 'winX': tableO[int(index / 2) + previous_tableO_length][2] = \
-                tableO[int(index / 2) + previous_tableO_length][2] + 1
-                if current_status == 'draw': tableO[int(index / 2) + previous_tableO_length][3] = \
-                tableO[int(index / 2) + previous_tableO_length][3] + 1
-                # print(index,value,current_status,tableO[int(index/2)+previous_tableO_length][1],tableO[int(index/2+previous_tableO_length)][2],tableO[int(index/2)+previous_tableO_length][3])
+            q_values = [self.get_q_value(state, a) for a in possible_actions]
+            max_q = max(q_values)
+            best_actions = [a for a, q in zip(possible_actions, q_values) if q == max_q]
+            return random.choice(best_actions)
 
-    previous_tableX_length = len(tableX)
-    previous_tableO_length = len(tableO)
+    def update_q_value(self, state, action, reward, next_state):
+        possible_actions_next = self.get_possible_actions(next_state)
+        if not possible_actions_next:
+            max_q_next = 0  # если действий нет, считаем максимальное Q-значение равным 0
+        else:
+            max_q_next = max([self.get_q_value(next_state, a) for a in possible_actions_next])
 
-    # tableX_procents.append(100*previous_tableX_length/(3**9))
-    tableX_quantity.append(previous_tableX_length)
+        new_q = (1 - self.alpha) * self.get_q_value(state, action) + \
+                self.alpha * (reward + self.gamma * max_q_next)
+        self.q_values[(state, action)] = new_q
 
-    if (k + 1) % 10 ** 4 == 0: print(k + 1)
+    def get_possible_actions(self, state):
+        return [i for i, val in enumerate(state) if val == 0]
 
-tableO.insert(0, ['C---------', '-', '-', '-'])
+def print_board(board):
+    for row in board:
+        row_str = " | ".join(map(str, row))
+        print(row_str)
+        print("-" * len(row_str))
 
-with open("tableX.txt", "w") as output:
-    output.write(str(tableX))
+def check_winner(board):
+    for row in board:
+        if len(set(row)) == 1 and row[0] != 0:
+            return row[0]
 
-with open("table0.txt", "w") as output:
-    output.write(str(tableO))
+    for col in range(3):
+        if len(set([board[row][col] for row in range(3)])) == 1 and board[0][col] != 0:
+            return board[0][col]
 
-print('Party', (k + 1))
-print()
-print('tableX', len(tableX))
-print('table0', len(tableO))
+    if len(set([board[i][i] for i in range(3)])) == 1 and board[0][0] != 0:
+        return board[0][0]
+
+    if len(set([board[i][2 - i] for i in range(3)])) == 1 and board[0][2] != 0:
+        return board[0][2]
+
+    return 0
+
+
+def train_agents(smart_agent, random_agent, num_episodes=100000):
+    wins = 0
+    loses = 0
+    for match in range(num_episodes):
+        board = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        current_agent = smart_agent #random.choice([smart_agent, random_agent])
+
+        while True:
+            state = tuple(map(tuple, board))
+            possible_actions = [(i, j) for i in range(3) for j in range(3) if board[i][j] == 0]
+
+            action = current_agent.choose_action(state, possible_actions)
+            row, col = action
+            board[row][col] = 1  # Ход текущего агента
+
+            next_state = tuple(map(tuple, board))
+            winner = check_winner(board)
+
+            if winner:
+                reward = 1 if winner == 1 else -1
+                if current_agent == smart_agent:
+                    wins += 1
+            else:
+                reward = 0
+                if current_agent == smart_agent:
+                    loses += 1
+
+            if current_agent == smart_agent:
+                current_agent.update_q_value(state, action, reward, next_state)
+
+            if winner:
+                board = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]  # Начать новую игру
+                break
+
+            if current_agent == smart_agent:
+                current_agent = random_agent #random.choice([smart_agent, random_agent])
+
+            else:
+                if current_agent == random_agent:
+                    current_agent = smart_agent
+        if match % 50 == 0:
+             #print("Прошло партий")
+             #print(match)
+             #print("Победил умом")
+             print(wins)
+   # print("Сходил в молоко")
+   # print(loses)
+
+def main():
+    smart_agent = QLearningAgent()
+    random_agent = RandomAgent()
+
+    # Обучение умного агента с глупым
+    train_agents(smart_agent, random_agent, num_episodes=5000)
+
+    # Игра с обученным ботом
+    board = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    while True:
+        state = tuple(map(tuple, board))
+        possible_actions = [(i, j) for i in range(3) for j in range(3) if board[i][j] == 0]
+        action = smart_agent.choose_action(state, possible_actions)
+        row, col = action
+        board[row][col] = 1  # Ход бота
+
+        winner = check_winner(board)
+        if winner:
+            print_board(board)
+            print("Бот", "Победил!" if winner == 1 else "Проиграл!")
+            break
+        print_board(board)
+        row = int(input("Введите номер строки (0-2): "))
+        col = int(input("Введите номер столбца (0-2): "))
+        if board[row][col] == 0:
+            board[row][col] = -1  # Ход игрока
+        else:
+            print("Неверный ход, попробуйте снова.")
+            continue
+
+        winner = check_winner(board)
+        if winner:
+            print_board(board)
+            print("Игрок", "Победил!" if winner == -1 else "Проиграл!")
+            break
+
+
+
+if __name__ == "__main__":
+    main()
